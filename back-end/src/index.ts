@@ -6,6 +6,8 @@ import * as cors from "cors"
 import { Request, Response } from "express"
 import { Routes } from "./routes"
 import { Student } from "./entity/student.entity"
+import { Roll } from "./entity/roll.entity"
+import { StudentRollState } from "./entity/student-roll-state.entity"
 
 createConnection()
   .then(async (connection) => {
@@ -30,7 +32,6 @@ createConnection()
     app.listen(4001)
 
     // insert 15 students
-
     await connection.manager.find(Student).then(async (students) => {
       console.log("We have " + students.length + " students")
       if (students.length === 0) {
@@ -139,6 +140,52 @@ createConnection()
             photo_url: "",
           })
         )
+      }
+    })
+
+    // insert rolls for past 3 months
+    await connection.manager.find(Roll).then(async (rolls) => {
+      console.log("We have " + rolls.length + " rolls")
+      if (rolls.length === 0) {
+        for (let month = 10; month <= 12; month++) {
+          for (let day = 1; day <= 30; day++) {
+            // add a zero to the day if its a single digit number
+            let dayString = day.toString()
+            if (dayString.length === 1) {
+              dayString = "0" + dayString
+            }
+
+            await connection.manager.save(
+              connection.manager.create(Roll, {
+                name: `(Grade 12) 2021-${month}-${dayString}`,
+                completed_at: `2021-${month}-${dayString}`,
+              })
+            )
+          }
+        }
+      }
+    })
+
+    // insert student roll states for past 3 months
+    await connection.manager.find(Roll).then(async (rolls) => {
+      const studentRoleState = await connection.manager.find(StudentRollState)
+      const students = await connection.manager.find(Student)
+
+      if (studentRoleState.length === 0) {
+        for (let i = 0; i < rolls.length; i++) {
+          for (let j = 0; j < students.length; j++) {
+            // set rollState randomly to either "unmark", "present", "absent" or "late"
+            const rollState = ["unmark", "present", "absent", "late"][Math.floor(Math.random() * 4)]
+
+            await connection.manager.save(
+              connection.manager.create(StudentRollState, {
+                student_id: students[j].id,
+                roll_id: rolls[i].id,
+                state: rollState,
+              })
+            )
+          }
+        }
       }
     })
 

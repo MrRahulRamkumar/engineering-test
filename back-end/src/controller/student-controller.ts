@@ -10,6 +10,15 @@ export class StudentController {
     return this.studentRepository.find()
   }
 
+  async getStudent(request: Request, response: Response, next: NextFunction) {
+    const student = await this.studentRepository.findOne(request.params.id)
+    if (student !== undefined) {
+      return student
+    } else {
+      response.status(404).send("Student not found")
+    }
+  }
+
   async createStudent(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
@@ -27,21 +36,29 @@ export class StudentController {
   async updateStudent(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    this.studentRepository.findOne(params.id).then((student) => {
-      const updateStudentInput: UpdateStudentInput = {
-        id: params.id,
-        first_name: params.first_name,
-        last_name: params.last_name,
-        photo_url: params.photo_url,
-      }
-      student.prepareToUpdate(updateStudentInput)
+    const studentToUpdate = await this.studentRepository.findOne(params.id)
 
-      return this.studentRepository.save(student)
-    })
+    const updateStudentInput: UpdateStudentInput = {
+      id: params.id,
+      first_name: params.first_name,
+      last_name: params.last_name,
+      photo_url: params.photo_url,
+    }
+
+    if (studentToUpdate !== undefined) {
+      studentToUpdate.prepareToUpdate(updateStudentInput)
+      return this.studentRepository.save(studentToUpdate)
+    } else {
+      response.status(404).send("Student not found")
+    }
   }
 
   async removeStudent(request: Request, response: Response, next: NextFunction) {
     let studentToRemove = await this.studentRepository.findOne(request.params.id)
-    await this.studentRepository.remove(studentToRemove)
+    if (studentToRemove !== undefined) {
+      return this.studentRepository.remove(studentToRemove)
+    } else {
+      response.status(404).send("Student not found")
+    }
   }
 }
