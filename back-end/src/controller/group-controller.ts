@@ -11,6 +11,7 @@ import { Student } from "../entity/student.entity"
 import { QueryResult } from "../interface/query-result.interface"
 
 export class GroupController {
+  private studentRepository = getRepository(Student)
   private groupRepository = getRepository(Group)
   private groupStudentRepository = getRepository(GroupStudent)
   private studentRollStateRepository = getRepository(StudentRollState)
@@ -80,11 +81,19 @@ export class GroupController {
     // Task 1:
     // Return the list of Students that are in a Group
 
-    const groupStudents = await createQueryBuilder(Student, "student")
-      .leftJoinAndSelect(GroupStudent, "groupStudent", "groupStudent.student_id = student.id")
-      .where("groupStudent.group_id = :group_id", { group_id: request.params.id })
+    /*
+    SELECT *
+    FROM  student
+          INNER JOIN group_student ON student.id = group_student.student_id
+    WHERE  group_student.group_id = 1  
+    */
+    const studentsInGroup = await this.studentRepository
+      .createQueryBuilder("student")
+      .innerJoin(GroupStudent, "group_student", "student.id = group_student.student_id")
+      .where("group_student.group_id = :id", { id: request.params.id })
       .getMany()
-    return groupStudents
+
+    return studentsInGroup
   }
 
   private async addToGroupStudent(id: number, queryResult: QueryResult[]) {
@@ -126,8 +135,8 @@ export class GroupController {
       FROM   student_roll_state
              INNER JOIN roll ON student_roll_state.roll_id = roll.id
       WHERE  roll.id = student_roll_state.roll_id
-            AND completed_at BETWEEN '2021-10-31 18:30:00.000' AND '2021-11-14 18:30:00.000'
-            AND state = 'late'
+            AND completed_at BETWEEN '2021-10-31' AND '2021-11-14'
+            AND (state = 'late' or state = 'absent')
       GROUP  BY student_id
       HAVING incident_count > 3  
       */

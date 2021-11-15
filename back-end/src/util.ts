@@ -28,5 +28,6 @@ export function getRollStatesConditionString(rollStates: string): string {
     }
   }
   console.log(conditionsString)
-  return conditionsString
+  // return with brackets as we want this to be grouped together
+  return "(" + conditionsString + ")"
 }

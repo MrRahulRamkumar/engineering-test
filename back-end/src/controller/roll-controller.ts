@@ -91,15 +91,19 @@ export class RollController {
   async updateStudentRollState(request: Request, response: Response, next: NextFunction) {
     const { body: params } = request
 
-    this.studentRollStateRepository.findOne(params.id).then((studentRollState) => {
-      const updateStudentRollStateInput: UpdateStudentRollStateInput = {
-        id: params.id,
-        roll_id: params.roll_id,
-        student_id: params.student_id,
-        state: params.state,
-      }
-      studentRollState.prepareToUpdate(updateStudentRollStateInput)
-      return this.studentRollStateRepository.save(studentRollState)
-    })
+    let studentRollStateToUpdate = await this.studentRollStateRepository.findOne(params.id)
+
+    const updateStudentRollStateInput: UpdateStudentRollStateInput = {
+      id: params.id,
+      roll_id: params.roll_id,
+      student_id: params.student_id,
+      state: params.state,
+    }
+    if (studentRollStateToUpdate !== undefined) {
+      studentRollStateToUpdate.prepareToUpdate(updateStudentRollStateInput)
+      return this.studentRollStateRepository.save(studentRollStateToUpdate)
+    } else {
+      response.status(404).send("StudentRollState not found")
+    }
   }
 }
